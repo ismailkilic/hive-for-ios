@@ -16,18 +16,29 @@ struct Game: View {
 
 	private let viewModel: GameViewModel
 
-	init(setup: Setup) {
-		viewModel = GameViewModel(setup: setup)
+	private var playerViewModel: PlayerGameViewModel? {
+		viewModel as? PlayerGameViewModel
 	}
 
-	private func handleTransition(to newState: GameViewModel.State) {
-		switch newState {
-		case .shutDown, .forfeit:
-			container.appState[\.gameSetup] = nil
-		case .begin, .gameStart, .opponentTurn, .playerTurn, .sendingMovement, .gameEnd:
-			break
+	private var spectatorViewModel: SpectatorGameViewModel? {
+		viewModel as? SpectatorGameViewModel
+	}
+
+	init(setup: Setup) {
+		switch setup.mode {
+		case .play: viewModel = PlayerGameViewModel(setup: setup)
+		case .spectate: viewModel = SpectatorGameViewModel(setup: setup)
 		}
 	}
+
+//	private func handleTransition(to newState: PlayerGameViewModel.State) {
+//		switch newState {
+//		case .shutDown, .forfeit:
+//			container.appState[\.gameSetup] = nil
+//		case .begin, .gameStart, .opponentTurn, .playerTurn, .sendingMovement, .gameEnd:
+//			break
+//		}
+//	}
 
 	var body: some View {
 		ZStack {
@@ -36,14 +47,14 @@ struct Game: View {
 			GameHUD()
 				.environmentObject(viewModel)
 		}
-		.onAppear { self.viewModel.userId = self.container.account?.userId }
-		.onReceive(viewModel.$state) { self.handleTransition(to: $0) }
+		.onAppear { self.playerViewModel?.userId = self.container.account?.userId }
+		.onReceive(viewModel.gameEndPublisher) { self.container.appState[\.gameSetup] = nil }
 		.navigationBarTitle("")
 		.navigationBarHidden(true)
 		.navigationBarBackButtonHidden(true)
 		.onAppear {
 			UIApplication.shared.isIdleTimerDisabled = true
-			self.viewModel.userId = self.container.account?.userId
+			self.playerViewModel?.userId = self.container.account?.userId
 			self.viewModel.clientInteractor = self.container.interactors.clientInteractor
 			self.viewModel.postViewAction(.onAppear)
 		}

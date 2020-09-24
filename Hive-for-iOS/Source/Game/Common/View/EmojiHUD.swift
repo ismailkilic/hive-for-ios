@@ -12,9 +12,12 @@ struct EmojiHUD: View {
 	private static let width: CGFloat = 80
 
 	@EnvironmentObject private var viewModel: GameViewModel
+	private var playerViewModel: PlayerGameViewModel? {
+		viewModel as? PlayerGameViewModel
+	}
 
 	private var pickerOffset: CGFloat {
-		viewModel.showingEmojiPicker
+		playerViewModel?.showingEmojiPicker ?? false
 			? Metrics.Spacing.m.rawValue
 			: -EmojiHUD.width
 	}
